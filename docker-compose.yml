@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-logi}
+      POSTGRES_USER: ${POSTGRES_USER:-logi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-logi}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: ["python", "-m", "logistics_bot.cli", "api"]
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  collector:
+    build: .
+    command: ["python", "-m", "logistics_bot.cli", "collector"]
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  bot:
+    build: .
+    command: ["python", "-m", "logistics_bot.cli", "bot"]
+    env_file:
+      - .env
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  cron:
+    build: .
+    command: ["python", "-m", "logistics_bot.cli", "cleanup-loop"]
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
