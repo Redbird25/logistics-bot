@@ -1,0 +1,604 @@
+version: 1
+cities:
+- id: UZ-TAS
+  name: Tashkent
+  country: UZ
+  region: Toshkent
+  aliases:
+  - Tashkent
+  - Toshkent
+  - Toshkent shahar
+  - Tasjkent
+  - Ташкент
+  - Тошкент
+  - Тошкент
+- id: UZ-SAM
+  name: Samarkand
+  country: UZ
+  region: Samarqand
+  aliases:
+  - Samarkand
+  - Samarqand
+  - Самарканд
+  - Самарқанд
+  - Samarqand shahri
+- id: UZ-BUK
+  name: Bukhara
+  country: UZ
+  region: Buxoro
+  aliases:
+  - Bukhara
+  - Buxoro
+  - Buhara
+  - Бухара
+  - Bux
+- id: UZ-AND
+  name: Andijan
+  country: UZ
+  region: Andijan
+  aliases:
+  - Andijan
+  - Andizhan
+  - Andijan vil
+  - Андижан
+  - Андижон
+  - Андижанская
+- id: UZ-FER
+  name: Fergana
+  country: UZ
+  region: Farg'ona
+  aliases:
+  - Fergana
+  - Fargona
+  - Farg'ona
+  - Ferghana
+  - Фергана
+  - Фаргона
+- id: UZ-URG
+  name: Urgench
+  country: UZ
+  region: Khorezm
+  aliases:
+  - Urgench
+  - Urganch
+  - Urganch shahar
+  - Ургенч
+  - Урганч
+- id: KZ-AST
+  name: Astana
+  country: KZ
+  region: Akmola
+  aliases:
+  - Astana
+  - Nur-Sultan
+  - Нур-Султан
+  - Астана
+  - Akmola
+  - Astana city
+- id: KZ-ALA
+  name: Almaty
+  country: KZ
+  region: Almaty
+  aliases:
+  - Almaty
+  - Alma-Ata
+  - Алматы
+  - Алма-Ата
+- id: KZ-SHY
+  name: Shymkent
+  country: KZ
+  region: Turkistan
+  aliases:
+  - Shymkent
+  - Chimkent
+  - Shymkent city
+  - Шымкент
+  - Чимкент
+- id: RU-MOW
+  name: Moscow
+  country: RU
+  region: Moscow Oblast
+  aliases:
+  - Moscow
+  - Moskva
+  - Москва
+  - Moskov
+- id: RU-SPE
+  name: Saint Petersburg
+  country: RU
+  region: Saint Petersburg
+  aliases:
+  - Saint Petersburg
+  - Sankt-Peterburg
+  - Sankt Peterburg
+  - Санкт-Петербург
+  - Piter
+  - Питер
+- id: RU-NVS
+  name: Novosibirsk
+  country: RU
+  region: Novosibirsk Oblast
+  aliases:
+  - Novosibirsk
+  - Novosib
+  - Новосибирск
+- id: KG-BIX
+  name: Bishkek
+  country: KG
+  region: Chuy
+  aliases:
+  - Bishkek
+  - Frunze
+  - Бишкек
+  - Фрунзе
+- id: KG-OSH
+  name: Osh
+  country: KG
+  region: Osh
+  aliases:
+  - Osh
+  - Ош
+  - O'sh
+- id: BY-MIN
+  name: Minsk
+  country: BY
+  region: Minsk
+  aliases:
+  - Minsk
+  - Минск
+- id: AM-EVN
+  name: Yerevan
+  country: AM
+  region: Yerevan
+  aliases:
+  - Yerevan
+  - Erevan
+  - Ереван
+  - Երևան
+- id: AZ-BAK
+  name: Baku
+  country: AZ
+  region: Baku
+  aliases:
+  - Baku
+  - Bakı
+  - Бакин
+  - Баку
+- id: TJ-DYU
+  name: Dushanbe
+  country: TJ
+  region: Dushanbe
+  aliases:
+  - Dushanbe
+  - Душанбе
+  - Душанбе ш.
+  - Душанба
+- id: GE-TBS
+  name: Tbilisi
+  country: GE
+  region: Tbilisi
+  aliases:
+  - Tbilisi
+  - Thbilisi
+  - Tiflis
+  - Тбилиси
+  - თბილისი
+- id: UZ-NAM
+  name: Namangan
+  country: UZ
+  region: Namangan
+  aliases:
+  - Namangan
+  - Namangan shahar
+  - Namangan city
+  - Наманган
+  - Наманган шаҳраси
+- id: UZ-NUK
+  name: Nukus
+  country: UZ
+  region: Karakalpakstan
+  aliases:
+  - Nukus
+  - Nokis
+  - Нукуc
+  - Нукус
+- id: UZ-QAR
+  name: Karshi
+  country: UZ
+  region: Qashqadaryo
+  aliases:
+  - Karshi
+  - Qarshi
+  - Karshi city
+  - Карши
+  - Қарши
+- id: UZ-NAV
+  name: Navoi
+  country: UZ
+  region: Navoiy
+  aliases:
+  - Navoi
+  - Navoiy
+  - Navoy
+  - Навои
+  - Навоий
+- id: UZ-TRM
+  name: Termez
+  country: UZ
+  region: Surkhandarya
+  aliases:
+  - Termez
+  - Termiz
+  - Термез
+  - Термиз
+- id: UZ-KOK
+  name: Kokand
+  country: UZ
+  region: Fergana
+  aliases:
+  - Kokand
+  - Qoqon
+  - Kokand city
+  - Коканд
+  - Қўқон
+- id: UZ-JIZ
+  name: Jizzakh
+  country: UZ
+  region: Jizzakh
+  aliases:
+  - Jizzakh
+  - Jizzax
+  - Jizzakh city
+  - Джизак
+  - Жиззах
+- id: KZ-KAR
+  name: Karaganda
+  country: KZ
+  region: Karaganda
+  aliases:
+  - Karaganda
+  - Karagandy
+  - Қарағанды
+  - Караганда
+- id: KZ-AKTB
+  name: Aktobe
+  country: KZ
+  region: Aktobe
+  aliases:
+  - Aktobe
+  - Aqtobe
+  - Актобе
+  - Ақтөбе
+- id: KZ-AKTA
+  name: Aktau
+  country: KZ
+  region: Mangystau
+  aliases:
+  - Aktau
+  - Aqtau
+  - Актау
+  - Ақтау
+  - Shevchenko
+- id: KZ-ATR
+  name: Atyrau
+  country: KZ
+  region: Atyrau
+  aliases:
+  - Atyrau
+  - Atyraw
+  - Атырау
+  - Гурьев
+- id: KZ-KST
+  name: Kostanay
+  country: KZ
+  region: Kostanay
+  aliases:
+  - Kostanay
+  - Kostanai
+  - Қостанай
+  - Костанай
+- id: KZ-PVL
+  name: Pavlodar
+  country: KZ
+  region: Pavlodar
+  aliases:
+  - Pavlodar
+  - Pavlodar city
+  - Павлодар
+- id: KZ-UKM
+  name: Oskemen
+  country: KZ
+  region: East Kazakhstan
+  aliases:
+  - Oskemen
+  - Ust-Kamenogorsk
+  - Өскемен
+  - Усть-Каменогорск
+- id: KZ-TLK
+  name: Taraz
+  country: KZ
+  region: Zhambyl
+  aliases:
+  - Taraz
+  - Talgar
+  - Тараз
+  - Джамбул
+- id: RU-EKT
+  name: Yekaterinburg
+  country: RU
+  region: Sverdlovsk Oblast
+  aliases:
+  - Yekaterinburg
+  - Ekaterinburg
+  - Екатеринбург
+  - Свердловск
+- id: RU-KZN
+  name: Kazan
+  country: RU
+  region: Tatarstan
+  aliases:
+  - Kazan
+  - Kazan
+  - Казань
+  - Qazan
+- id: RU-NNZ
+  name: Nizhny Novgorod
+  country: RU
+  region: Nizhny Novgorod Oblast
+  aliases:
+  - Nizhny Novgorod
+  - Nizhniy Novgorod
+  - Нижний Новгород
+  - Горький
+- id: RU-CHL
+  name: Chelyabinsk
+  country: RU
+  region: Chelyabinsk Oblast
+  aliases:
+  - Chelyabinsk
+  - Cheljabinsk
+  - Челябинск
+- id: RU-OMS
+  name: Omsk
+  country: RU
+  region: Omsk Oblast
+  aliases:
+  - Omsk
+  - Омск
+- id: RU-SAM
+  name: Samara
+  country: RU
+  region: Samara Oblast
+  aliases:
+  - Samara
+  - Самара
+  - Kuybyshev
+- id: RU-ROV
+  name: Rostov-on-Don
+  country: RU
+  region: Rostov Oblast
+  aliases:
+  - Rostov-on-Don
+  - Rostov na Donu
+  - Ростов-на-Дону
+  - Ростов-на-Дону
+- id: RU-UFA
+  name: Ufa
+  country: RU
+  region: Bashkortostan
+  aliases:
+  - Ufa
+  - Уфа
+- id: RU-KRA
+  name: Krasnoyarsk
+  country: RU
+  region: Krasnoyarsk Krai
+  aliases:
+  - Krasnoyarsk
+  - Красноярск
+- id: RU-IRK
+  name: Irkutsk
+  country: RU
+  region: Irkutsk Oblast
+  aliases:
+  - Irkutsk
+  - Иркутск
+- id: UA-KYI
+  name: Kyiv
+  country: UA
+  region: Kyiv City
+  aliases:
+  - Kyiv
+  - Kiev
+  - Київ
+  - Киев
+- id: UA-KHR
+  name: Kharkiv
+  country: UA
+  region: Kharkiv Oblast
+  aliases:
+  - Kharkiv
+  - Kharkov
+  - Харків
+  - Харьков
+- id: UA-DNP
+  name: Dnipro
+  country: UA
+  region: Dnipropetrovsk Oblast
+  aliases:
+  - Dnipro
+  - Dnepr
+  - Dnipropetrovsk
+  - Дніпро
+  - Днепр
+- id: UA-ODS
+  name: Odesa
+  country: UA
+  region: Odesa Oblast
+  aliases:
+  - Odesa
+  - Odessa
+  - Одеса
+  - Одесса
+- id: UA-LVV
+  name: Lviv
+  country: UA
+  region: Lviv Oblast
+  aliases:
+  - Lviv
+  - Lvov
+  - Львів
+  - Львов
+- id: BY-GOM
+  name: Gomel
+  country: BY
+  region: Gomel Region
+  aliases:
+  - Gomel
+  - Homyel
+  - Гомель
+- id: BY-BRS
+  name: Brest
+  country: BY
+  region: Brest Region
+  aliases:
+  - Brest
+  - Bieraśc
+  - Брест
+- id: BY-VTB
+  name: Vitebsk
+  country: BY
+  region: Vitebsk Region
+  aliases:
+  - Vitebsk
+  - Viciebsk
+  - Витебск
+- id: BY-GRO
+  name: Grodno
+  country: BY
+  region: Grodno Region
+  aliases:
+  - Grodno
+  - Hrodna
+  - Гродно
+- id: BY-MOG
+  name: Mogilev
+  country: BY
+  region: Mogilev Region
+  aliases:
+  - Mogilev
+  - Mahilyow
+  - Могилёв
+  - Магілёў
+- id: KG-JAA
+  name: Jalal-Abad
+  country: KG
+  region: Jalal-Abad
+  aliases:
+  - Jalal-Abad
+  - Dzhalal-Abad
+  - Жалал-Абад
+- id: KG-KRL
+  name: Karakol
+  country: KG
+  region: Issyk-Kul
+  aliases:
+  - Karakol
+  - Przhevalsk
+  - Каракол
+- id: TJ-KHJ
+  name: Khujand
+  country: TJ
+  region: Sughd
+  aliases:
+  - Khujand
+  - Khojand
+  - Худжанд
+  - Хуҷанд
+- id: TJ-KLB
+  name: Kulob
+  country: TJ
+  region: Khatlon
+  aliases:
+  - Kulob
+  - Kulyab
+  - Кулоб
+  - Куляб
+- id: AZ-GNJ
+  name: Ganja
+  country: AZ
+  region: Ganja
+  aliases:
+  - Ganja
+  - Gence
+  - Гянджа
+- id: AZ-SUM
+  name: Sumqayit
+  country: AZ
+  region: Sumqayit
+  aliases:
+  - Sumqayit
+  - Sumgait
+  - Сумгаит
+- id: AM-GYU
+  name: Gyumri
+  country: AM
+  region: Shirak
+  aliases:
+  - Gyumri
+  - Giumri
+  - Գյումրի
+  - Ленинакан
+- id: AM-VAN
+  name: Vanadzor
+  country: AM
+  region: Lori
+  aliases:
+  - Vanadzor
+  - Vanadzor city
+  - Վանաձոր
+  - Кировакан
+- id: GE-BAT
+  name: Batumi
+  country: GE
+  region: Adjara
+  aliases:
+  - Batumi
+  - ბათუმი
+  - Батуми
+- id: GE-KUT
+  name: Kutaisi
+  country: GE
+  region: Imereti
+  aliases:
+  - Kutaisi
+  - ქუთაისი
+  - Кутаиси
+- id: TM-ASH
+  name: Ashgabat
+  country: TM
+  region: Ashgabat
+  aliases:
+  - Ashgabat
+  - Ashkhabad
+  - Aşgabat
+  - Ашхабад
+- id: TM-TAB
+  name: Turkmenabat
+  country: TM
+  region: Lebap
+  aliases:
+  - Turkmenabat
+  - Türkmenabat
+  - Turkmenabad
+  - Туркменабад
+  - Чарджоу
+- id: MD-KIV
+  name: Chisinau
+  country: MD
+  region: Chisinau
+  aliases:
+  - Chisinau
+  - Kishinev
+  - Chișinău
+  - Кишинёв

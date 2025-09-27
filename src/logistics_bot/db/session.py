@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from logistics_bot.config.settings import get_settings
-from logistics_bot.db.models import Base
+from logistics_bot.db.migrations import run_all_migrations
 
 _settings = get_settings()
 
@@ -21,5 +21,4 @@ async def get_session() -> AsyncSession:
 
 
 async def init_db() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await run_all_migrations(engine=engine)

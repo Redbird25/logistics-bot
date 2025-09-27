@@ -12,7 +12,8 @@ from logistics_bot.parsing.parser import MessageParser
 from logistics_bot.services.dedup_service import build_dedup_service
 from logistics_bot.services.message_pipeline import MessagePipeline
 from logistics_bot.agents.collector import run_collector
-from logistics_bot.db.session import init_db
+from logistics_bot.db.session import init_db, engine
+from logistics_bot.db.migrations import run_all_migrations
 
 
 async def _run_collector() -> None:
@@ -46,6 +47,10 @@ async def _cleanup_once() -> None:
     await cleanup_once()
 
 
+async def _run_migrations() -> None:
+    await run_all_migrations(engine=engine)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Logistics bot control CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -54,6 +59,7 @@ def main() -> None:
     subparsers.add_parser("api", help="Run the FastAPI service")
     subparsers.add_parser("cleanup", help="Run retention cleanup once")
     subparsers.add_parser("cleanup-loop", help="Run retention cleanup loop")
+    subparsers.add_parser("migrate", help="Apply database schema and migrations")
 
     args = parser.parse_args()
 
@@ -67,6 +73,8 @@ def main() -> None:
         asyncio.run(_cleanup_once())
     elif args.command == "cleanup-loop":
         asyncio.run(_cleanup_loop())
+    elif args.command == "migrate":
+        asyncio.run(_run_migrations())
     else:
         logger.error("Unsupported command %s", args.command)
 

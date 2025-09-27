@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics Radar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="hero">
+        <div class="overlay"></div>
+        <div class="hero-content">
+            <h1>Logistics Radar</h1>
+            <p>Быстрый поиск грузов и рейсов в стиле modern car.</p>
+            <form id="search-form" class="search-panel">
+                <div class="field">
+                    <label for="origin">Откуда</label>
+                    <input id="origin" name="origin" type="text" placeholder="Ташкент" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="destination">Куда</label>
+                    <input id="destination" name="destination" type="text" placeholder="Бухара" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="vehicle">Тип кузова</label>
+                    <input id="vehicle" name="vehicle" type="text" placeholder="Тент / Реф" autocomplete="off">
+                </div>
+                <button type="submit" class="search-button">Найти</button>
+            </form>
+        </div>
+    </header>
+
+    <main>
+        <section id="results" class="results"></section>
+        <div id="empty-state" class="empty hidden">
+            <span class="empty-icon">🚚</span>
+            <p>Начните поиск, чтобы увидеть свежие заявки.</p>
+        </div>
+    </main>
+
+    <template id="result-template">
+        <article class="card">
+            <div class="card-header">
+                <h2 class="route"></h2>
+                <span class="posted"></span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <span class="label">Кузов</span>
+                    <span class="value vehicle"></span>
+                </div>
+                <div class="row">
+                    <span class="label">Груз</span>
+                    <span class="value cargo"></span>
+                </div>
+                <div class="row">
+                    <span class="label">Цена</span>
+                    <span class="value price"></span>
+                </div>
+                <div class="row">
+                    <span class="label">Контакт</span>
+                    <span class="value contact"></span>
+                </div>
+                <div class="row meta hidden">
+                    <span class="label">Маршрут</span>
+                    <span class="value distance"></span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a class="link" target="_blank" rel="noopener" href="#">Открыть пост</a>
+            </div>
+        </article>
+    </template>
+
+    <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ COPY pyproject.toml README.md requirements.txt ./
 COPY src ./src
 COPY rules ./rules
 COPY assets ./assets
+COPY web ./web
 COPY config ./config
 
 RUN pip install --upgrade pip \ 

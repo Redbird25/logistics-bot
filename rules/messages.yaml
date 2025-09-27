@@ -1,30 +1,46 @@
 routes:
-  - pattern: '(?P<origin>[^\n\-→➡️]+?)\s*(?:-|–|—|→|➡️|=>|->)\s*(?P<destination>[^\n]+)'
-  - pattern: 'маршрут\s*(?P<origin>[^\n]+?)\s*(?:-|–|—|→|➡️|=>|->)\s*(?P<destination>[^\n]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)\s+дан\s+(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)dan\s+(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)dan(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)\s+из\s+(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)\s+в\s+(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
-  - pattern: '(?P<origin>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+?)\s+узидан\s+(?P<destination>[A-Za-zА-Яа-яЁё''`\s\u02bb\u02bc]+)'
+- pattern: (?P<origin>[^\n\-→➡️]+?)\s*(?:-|–|—|→|➡️|=>|->)\s*(?P<destination>[^\n]+)
+- pattern: маршрут\s*(?P<origin>[^\n]+?)\s*(?:-|–|—|→|➡️|=>|->)\s*(?P<destination>[^\n]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)\s+дан\s+(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)dan\s+(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)dan(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)\s+из\s+(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)\s+в\s+(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
+- pattern: (?P<origin>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+?)\s+узидан\s+(?P<destination>[A-Za-zА-Яа-яЁё'`\s\u02bb\u02bc]+)
 vehicles:
-  - pattern: '\b(тент|tent|тенто|тентовк|tentovk)\w*'
-    value: 'tent'
-  - pattern: '\b(реф|rf|ref|рефрижератор|refrigerator)\w*'
-    value: 'refrigerated'
-  - pattern: '\b(контейнер|container|konteyner)\w*'
-    value: 'container'
-  - pattern: '\b(фура|fura|furachilar)\w*'
-    value: 'truck'
-  - pattern: '\b(площадк|ploshadk|platform|paravoz|паравоз|plashadk)\w*'
-    value: 'flatbed'
-  - pattern: '\b(?P<vehicle>газель|camper|truck|samossval|самосвал)\b'
+- pattern: \b(тент|tent|тенто|тентовк|tentovk)\w*
+  value: tent
+- pattern: \b(реф|rf|ref|рефрижератор|refrigerator)\w*
+  value: refrigerated
+- pattern: \b(контейнер|container|konteyner)\w*
+  value: container
+- pattern: \b(фура|fura|furachilar)\w*
+  value: truck
+- pattern: \b(площадк|ploshadk|platform|paravoz|паравоз|plashadk)\w*
+  value: flatbed
+- pattern: \b(?P<vehicle>газель|camper|truck|samossval|самосвал)\b
 tonnage:
-  - pattern: '(?P<tons>\d{1,3}(?:[\.,_]\d{1,2})?)\s*(?:т(?![а-яa-z])|тонн|тонна|tonna|tons?)'
-  - pattern: '(?P<tons_low>\d{1,3})\s*[-–]\s*(?P<tons_high>\d{1,3})\s*(?:т(?![а-яa-z])|тонн|тонна|tonna|tons?)'
+- pattern: (?P<tons>\d{1,3}(?:[\.,_]\d{1,2})?)\s*(?:т(?![а-яa-z])|тонн|тонна|tonna|tons?)
+- pattern: (?P<tons_low>\d{1,3})\s*[-–]\s*(?P<tons_high>\d{1,3})\s*(?:т(?![а-яa-z])|тонн|тонна|tonna|tons?)
 prices:
-  - pattern: '(?P<currency>\$|€|₽)\s*(?P<amount>\d{1,6}(?:[\s.,]\d{3})*)'
-  - pattern: '(?P<amount>\d{1,6}(?:[\s.,]\d{3})*)\s*(?P<currency_symbol>\$|€|₽)'
-  - pattern: '(?P<amount>\d+(?:[.,]\d+)?)(?:\s*|-)?(?P<multiplier>млн|миллион|mln|млн\.?|тыс|тысяч|th?k)\s*(?P<currency>usd|eur|rub|руб|сум|som|so''m|byn|uzs)?'
-  - pattern: '(?P<amount>\d{1,3}(?:[\s.,]\d{3})+)(?:\s*)(?P<currency>usd|eur|rub|руб|сум|som|so''m|byn|uzs)'
-  - pattern: '(?P<amount>\d+(?:[.,]\d+)?)\s*(?P<currency>usd|eur|rub|руб|сум|som|so''m|byn|uzs)'
+- pattern: (?P<currency>\$|€|₽)\s*(?P<amount>\d{1,6}(?:[\s.,]\d{3})*)
+- pattern: (?P<amount>\d{1,6}(?:[\s.,]\d{3})*)\s*(?P<currency_symbol>\$|€|₽)
+- pattern: (?P<amount>\d+(?:[.,]\d+)?)(?:\s*|-)?(?P<multiplier>млн|миллион|mln|млн\.?|тыс|тысяч|th?k)\s*(?P<currency>usd|eur|rub|руб|сум|som|so'm|byn|uzs)?
+- pattern: (?P<amount>\d{1,3}(?:[\s.,]\d{3})+)(?:\s*)(?P<currency>usd|eur|rub|руб|сум|som|so'm|byn|uzs)
+- pattern: (?P<amount>\d+(?:[.,]\d+)?)\s*(?P<currency>usd|eur|rub|руб|сум|som|so'm|byn|uzs)
+cargo:
+- pattern: \b(зерн[оа]|bug'doy|don)\b
+  value: grain
+- pattern: \b(цемент|cement)\b
+  value: cement
+- pattern: \b(оборудовани|equipment)\w*
+  value: equipment
+- pattern: \b(уголь|coal|ko'mir)\b
+  value: coal
+urgency:
+- pattern: \b(срочно|srchno|tezkor|urgent)\b
+  value: urgent
+- pattern: \b(сегодня|bugun|today)\b
+  value: today
+- pattern: \b(завтра|ertaga|tomorrow)\b
+  value: tomorrow

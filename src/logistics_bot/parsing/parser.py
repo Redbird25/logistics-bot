@@ -3,11 +3,13 @@ from __future__ import annotations
 import datetime as dt
 import re
 import unicodedata
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
 
+from logistics_bot.parsing.cities import CityDirectory
 from logistics_bot.parsing.schemas import ParsedMessage
 
 _MODULE_PATH = Path(__file__).resolve()
@@ -15,6 +17,31 @@ DEFAULT_RULES_PATHS = [
     _MODULE_PATH.parents[3] / "rules" / "messages.yaml",
     _MODULE_PATH.parents[2] / "rules" / "messages.yaml",
 ]
+
+
+@dataclass(slots=True)
+class ParseSegment:
+    text: str
+    start_line: int
+    end_line: int
+    confidence: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def length(self) -> int:
+        return max(0, self.end_line - self.start_line + 1)
+
+
+@dataclass(slots=True)
+class ParseContext:
+    normalized_text: str
+    lines: list[str]
+    segments: list[ParseSegment]
+
+    @property
+    def is_multi_listing(self) -> bool:
+        return len(self.segments) > 1
+
 
 FLAG_RE = re.compile(r"[\U0001F1E6-\U0001F1FF]{2}")
 EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF]")
@@ -91,6 +118,7 @@ ROUTE_EXCLUDE_KEYWORDS: tuple[str, ...] = (
 )
 
 LOCATION_STOPWORDS: set[str] = {
+
     "kk",
     "kerak",
     "emas",
@@ -147,6 +175,12 @@ LOCATION_STOPWORDS: set[str] = {
     "pul",
     "naxt",
     "cash",
+    "usd",
+    "eur",
+    "rub",
+    "uzs",
+    "byn",
+    "som",
     "аванс",
     "dispecher",
     "dispechir",
@@ -178,19 +212,70 @@ LOCATION_STOPWORDS: set[str] = {
 }
 
 DIGIT_ONLY_RE = re.compile(r"\d+")
+BULLET_PREFIX_RE = re.compile(r"^\s*(?:[-\u2022*]|(?:\d{1,2}|[A-Za-z])[).:-])\s*")
+ENUMERATION_BREAK_RE = re.compile(r"^\s*\d{1,2}[).:-]\s*")
 
 
 class MessageParser:
-    def __init__(self, rules_path: Path | None = None) -> None:
-        path = self._resolve_rules_path(rules_path)
-        self.raw_rules = self._load_rules(path)
-        self.route_patterns = [re.compile(item["pattern"], re.IGNORECASE) for item in self.raw_rules["routes"]]
+    VEHICLE_CANONICAL: dict[str, str] = {
+        'tent': 'Тент',
+        'тент': 'Тент',
+        'тентованный': 'Тент',
+        'tент': 'Тент',
+        'ref': 'Реф',
+        'реф': 'Реф',
+        'реф.': 'Реф',
+        'рефрижератор': 'Реф',
+        'refrigerated': 'Реф',
+        'reef': 'Реф',
+        'container': 'Контейнер',
+        'контейнер': 'Контейнер',
+        'контейнеровоз': 'Контейнер',
+        'flatbed': 'Площадка',
+        'площадка': 'Площадка',
+        'платформа': 'Площадка',
+        'platform': 'Площадка',
+        'truck': 'Фура',
+        'фура': 'Фура',
+        'фура-р': 'Фура',
+        'бортовой': 'Бортовой',
+        'bort': 'Бортовой',
+    }
+
+    def __init__(
+        self,
+        rules_path: Path | None = None,
+        *,
+        cities_path: Path | None = None,
+    ) -> None:
+        rules_file = self._resolve_rules_path(rules_path)
+        self.rules_path = rules_file
+        self.raw_rules = self._load_rules(rules_file)
+        self.route_patterns = [
+            re.compile(item["pattern"], re.IGNORECASE)
+            for item in self.raw_rules.get("routes", [])
+        ]
         self.vehicle_patterns = [
             (re.compile(item["pattern"], re.IGNORECASE), item.get("value"))
-            for item in self.raw_rules["vehicles"]
+            for item in self.raw_rules.get("vehicles", [])
         ]
-        self.tonnage_patterns = [re.compile(item["pattern"], re.IGNORECASE) for item in self.raw_rules["tonnage"]]
-        self.price_patterns = [re.compile(item["pattern"], re.IGNORECASE) for item in self.raw_rules["prices"]]
+        self.tonnage_patterns = [
+            re.compile(item["pattern"], re.IGNORECASE)
+            for item in self.raw_rules.get("tonnage", [])
+        ]
+        self.price_patterns = [
+            re.compile(item["pattern"], re.IGNORECASE)
+            for item in self.raw_rules.get("prices", [])
+        ]
+        self.cargo_patterns = [
+            (re.compile(item["pattern"], re.IGNORECASE), item.get("value"))
+            for item in self.raw_rules.get("cargo", [])
+        ]
+        self.urgency_patterns = [
+            (re.compile(item["pattern"], re.IGNORECASE), item.get("value", "urgent"))
+            for item in self.raw_rules.get("urgency", [])
+        ]
+        self.city_directory = CityDirectory(cities_path)
 
     @staticmethod
     def _load_rules(path: Path) -> dict[str, Any]:
@@ -209,6 +294,140 @@ class MessageParser:
         # fall back to the first candidate for error reporting
         return DEFAULT_RULES_PATHS[0]
 
+    def reload_cities(self, cities_path: Path | None = None) -> None:
+        if cities_path:
+            self.city_directory = CityDirectory(cities_path)
+        else:
+            self.city_directory.reload()
+
+    def _build_context(self, text: str) -> ParseContext:
+        normalized = self._normalize_text(text)
+        lines = normalized.splitlines()
+        if not lines:
+            lines = [normalized]
+        segments = self._segment_text(normalized, lines)
+        return ParseContext(normalized_text=normalized, lines=lines, segments=segments)
+
+    def _run_pipeline(self, text: str, parsed: ParsedMessage) -> None:
+        parsed.metadata.setdefault("stage_text", text)
+        self._apply_route(text, parsed)
+        self._apply_price(text, parsed)
+        self._apply_vehicle(text, parsed)
+        self._apply_contact(text, parsed)
+        self._apply_tonnage(text, parsed)
+        self._apply_cargo(text, parsed)
+        self._apply_urgency(text, parsed)
+        self._apply_city_matches(parsed)
+
+    def _segment_text(self, normalized: str, lines: list[str]) -> list[ParseSegment]:
+        stripped = normalized.strip()
+        if not stripped:
+            return []
+        segments: list[ParseSegment] = []
+        buffer: list[str] = []
+        start_line = 0
+        for idx, raw_line in enumerate(lines):
+            content = raw_line.strip()
+            if not content:
+                if buffer:
+                    segment_text = "\n".join(buffer).strip()
+                    if segment_text:
+                        segments.append(ParseSegment(text=segment_text, start_line=start_line, end_line=idx - 1))
+                    buffer = []
+                continue
+            if buffer and (BULLET_PREFIX_RE.match(raw_line) or ENUMERATION_BREAK_RE.match(raw_line)):
+                segment_text = "\n".join(buffer).strip()
+                if segment_text:
+                    segments.append(ParseSegment(text=segment_text, start_line=start_line, end_line=idx - 1))
+                buffer = []
+            if not buffer:
+                start_line = idx
+            buffer.append(self._strip_bullet_prefix(raw_line))
+        if buffer:
+            segment_text = "\n".join(buffer).strip()
+            if segment_text:
+                segments.append(ParseSegment(text=segment_text, start_line=start_line, end_line=len(lines) - 1))
+        if not segments:
+            return [ParseSegment(text=stripped, start_line=0, end_line=len(lines) - 1)]
+        if len(segments) == 1:
+            return segments
+        meaningful: list[ParseSegment] = []
+        for segment in segments:
+            route_hits = self._count_route_hits(segment.text)
+            segment.metadata["route_hits"] = route_hits
+            if route_hits:
+                meaningful.append(segment)
+        return meaningful if meaningful else segments[:1]
+
+    @staticmethod
+    def _strip_bullet_prefix(line: str) -> str:
+        if not line:
+            return ""
+        if BULLET_PREFIX_RE.match(line):
+            return BULLET_PREFIX_RE.sub("", line, count=1).lstrip()
+        return line.lstrip()
+
+    def _count_route_hits(self, text: str) -> int:
+        hits = 0
+        for pattern in self.route_patterns:
+            if pattern.search(text):
+                hits += 1
+        origin, destination = self._guess_route_from_lines(text)
+        if origin and destination:
+            hits += 1
+        return hits
+
+    def _score_segment(self, parsed: ParsedMessage) -> float:
+        score = 0.0
+        if parsed.route_from and parsed.route_to:
+            score += 3.0
+        if parsed.contact:
+            score += 2.0
+        if parsed.vehicle_type:
+            score += 1.5
+        if parsed.price_amount:
+            score += 0.75
+        if parsed.tonnage_tons:
+            score += 0.5
+        if parsed.cargo:
+            score += 0.25
+        if parsed.urgency:
+            score += 0.1
+        return score
+
+    def _segment_payload(
+        self,
+        segment: ParseSegment,
+        parsed: ParsedMessage,
+        *,
+        include_metadata: bool,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "text": segment.text,
+            "start_line": segment.start_line,
+            "end_line": segment.end_line,
+            "confidence": segment.confidence,
+            "route_from": parsed.route_from,
+            "route_to": parsed.route_to,
+            "vehicle_type": parsed.vehicle_type,
+            "tonnage_tons": parsed.tonnage_tons,
+            "price_amount": parsed.price_amount,
+            "price_currency": parsed.price_currency,
+            "contact": parsed.contact,
+            "cargo": parsed.cargo,
+            "urgency": parsed.urgency,
+            "valid_until": parsed.valid_until.isoformat() if parsed.valid_until else None,
+        }
+        if include_metadata:
+            metadata_copy = {
+                key: value
+                for key, value in parsed.metadata.items()
+                if key not in {"segments", "normalized_text", "stage_text"}
+            }
+            if metadata_copy:
+                payload["metadata"] = metadata_copy
+        return payload
+
     def parse(
         self,
         *,
@@ -223,14 +442,59 @@ class MessageParser:
             posted_at=posted_at,
             raw_text=text,
         )
-        cleaned = self._normalize_text(text)
-        self._apply_route(cleaned, parsed)
-        self._apply_vehicle(cleaned, parsed)
-        self._apply_tonnage(cleaned, parsed)
-        self._apply_price(cleaned, parsed)
-        self._apply_contact(cleaned, parsed)
-        parsed.metadata["normalized_text"] = cleaned
+        context = self._build_context(text)
+        parsed.metadata["normalized_text"] = context.normalized_text
+        parsed.metadata["segment_count"] = len(context.segments)
+        parsed.metadata["multi_listing"] = context.is_multi_listing
+        segments_payload: list[dict[str, Any]] = []
+
+        if not context.segments:
+            context.segments = [
+                ParseSegment(
+                    text=context.normalized_text,
+                    start_line=0,
+                    end_line=len(context.lines) - 1,
+                )
+            ]
+
+        if not context.is_multi_listing:
+            segment_text = context.segments[0].text
+            self._run_pipeline(segment_text, parsed)
+            context.segments[0].confidence = self._score_segment(parsed)
+            segments_payload.append(
+                self._segment_payload(context.segments[0], parsed, include_metadata=True)
+            )
+        else:
+            best_choice: tuple[float, ParseSegment] | None = None
+            best_segment_text: str | None = None
+            for segment in context.segments:
+                segment_result = ParsedMessage(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    posted_at=posted_at,
+                    raw_text=segment.text,
+                )
+                self._run_pipeline(segment.text, segment_result)
+                score = self._score_segment(segment_result)
+                segment.confidence = score
+                segments_payload.append(
+                    self._segment_payload(segment, segment_result, include_metadata=True)
+                )
+                if best_choice is None or score > best_choice[0]:
+                    best_choice = (score, segment)
+                    best_segment_text = segment.text
+
+            if best_choice and best_choice[0] > 0 and best_segment_text:
+                self._run_pipeline(best_segment_text, parsed)
+            else:
+                self._run_pipeline(context.normalized_text, parsed)
+
+        parsed.metadata["segments"] = segments_payload
+        parsed.metadata["segmentation_strategy"] = (
+            "multi" if context.is_multi_listing else "single"
+        )
         return parsed
+
 
     @staticmethod
     def _normalize_text(text: str) -> str:
@@ -278,8 +542,11 @@ class MessageParser:
             match = pattern.search(text)
             if not match:
                 continue
-            parsed.vehicle_type = value or match.group("vehicle").strip()
-            parsed.tags.append(parsed.vehicle_type)
+            vehicle_value = value or match.group("vehicle").strip()
+            canonical_vehicle = self._normalize_vehicle_value(vehicle_value)
+            parsed.vehicle_type = canonical_vehicle
+            if canonical_vehicle and canonical_vehicle not in parsed.tags:
+                parsed.tags.append(canonical_vehicle)
             break
 
     def _apply_tonnage(self, text: str, parsed: ParsedMessage) -> None:
@@ -374,6 +641,120 @@ class MessageParser:
             username = tg_match.group("username")
             parsed.contact = f"@{username}"
             parsed.metadata.setdefault("contacts", []).append(parsed.contact)
+
+    def _apply_cargo(self, text: str, parsed: ParsedMessage) -> None:
+        if not getattr(self, "cargo_patterns", None):
+            return
+        matches: list[str] = []
+        for pattern, value in self.cargo_patterns:
+            match = pattern.search(text)
+            if not match:
+                continue
+            label = value or match.groupdict().get("cargo") or match.group(0)
+            label = label.strip()
+            if not label:
+                continue
+            matches.append(label)
+        if matches:
+            if not parsed.cargo:
+                parsed.cargo = matches[0]
+            parsed.metadata.setdefault("cargo_matches", matches)
+            for label in matches:
+                if label not in parsed.tags:
+                    parsed.tags.append(label)
+
+    def _apply_urgency(self, text: str, parsed: ParsedMessage) -> None:
+        matches: list[str] = []
+        for pattern, value in getattr(self, "urgency_patterns", []):
+            if pattern.search(text):
+                matches.append(value or "urgent")
+        if matches:
+            if not parsed.urgency:
+                parsed.urgency = matches[0]
+            parsed.metadata.setdefault("urgency_matches", matches)
+        validity = self._extract_valid_until(text, parsed.posted_at)
+        if validity:
+            parsed.valid_until = validity
+            parsed.metadata["valid_until_source"] = "time_hint"
+
+    def _extract_valid_until(self, text: str, posted_at: dt.datetime) -> dt.datetime | None:
+        time_match = re.search(r"\b\u0434\u043e\s*(\d{1,2})[:.](\d{2})", text, re.IGNORECASE)
+        if time_match:
+            hour = int(time_match.group(1))
+            minute = int(time_match.group(2))
+            tzinfo = posted_at.tzinfo or dt.timezone.utc
+            time_value = dt.time(hour=hour, minute=minute, tzinfo=tzinfo)
+            candidate = dt.datetime.combine(posted_at.date(), time_value)
+            if candidate <= posted_at:
+                candidate += dt.timedelta(days=1)
+            return candidate
+
+        relative_markers = [
+            (r"\b\u0441\u0435\u0433\u043e\u0434\u043d\u044f\b", 0),
+            (r"\b\u0437\u0430\u0432\u0442\u0440\u0430\b", 1),
+            (r"\b\u043f\u043e\u0441\u043b\u0435\u0437\u0430\u0432\u0442\u0440\u0430\b", 2),
+        ]
+        for marker, offset in relative_markers:
+            if re.search(marker, text, re.IGNORECASE):
+                tzinfo = posted_at.tzinfo or dt.timezone.utc
+                candidate_date = posted_at.date() + dt.timedelta(days=offset)
+                return dt.datetime.combine(candidate_date, dt.time(23, 59, tzinfo=tzinfo))
+
+        if re.search(r"\b\u0434\u043e \u043a\u043e\u043d\u0446\u0430 \u0434\u043d\u044f\b", text, re.IGNORECASE):
+            tzinfo = posted_at.tzinfo or dt.timezone.utc
+            return dt.datetime.combine(posted_at.date(), dt.time(23, 59, tzinfo=tzinfo))
+
+        english_markers = [
+            (r"\burgent\b", 0),
+            (r"\btoday\b", 0),
+            (r"\btomorrow\b", 1),
+        ]
+        for marker, offset in english_markers:
+            if re.search(marker, text, re.IGNORECASE):
+                tzinfo = posted_at.tzinfo or dt.timezone.utc
+                candidate_date = posted_at.date() + dt.timedelta(days=offset)
+                return dt.datetime.combine(candidate_date, dt.time(23, 59, tzinfo=tzinfo))
+        return None
+
+    def _apply_city_matches(self, parsed: ParsedMessage) -> None:
+        for field in ("route_from", "route_to"):
+            value = getattr(parsed, field)
+            if not value:
+                continue
+            record = self.city_directory.find(value)
+            if not record:
+                continue
+            metadata_key = f"{field}_city"
+            payload = record.to_metadata()
+            payload['raw'] = value
+            parsed.metadata[metadata_key] = payload
+            setattr(parsed, f"{field}_city_id", record.city_id)
+            setattr(parsed, f"{field}_city_name", record.name)
+            setattr(parsed, f"{field}_country", record.country)
+            setattr(parsed, f"{field}_region", record.region)
+            canonical_value = record.name
+            setattr(parsed, field, canonical_value)
+            raw_tag = value.strip()
+            if raw_tag and raw_tag not in parsed.metadata.setdefault('route_raw', []):
+                parsed.metadata.setdefault('route_raw', []).append(raw_tag)
+            if canonical_value not in parsed.tags:
+                parsed.tags.append(canonical_value)
+
+    def _normalize_vehicle_value(self, value: str | None) -> str | None:
+        if not value:
+            return None
+        candidate = value.strip()
+        if not candidate:
+            return None
+        key = candidate.lower()
+        canonical = self.VEHICLE_CANONICAL.get(key)
+        if canonical:
+            return canonical
+        cleaned = re.sub(r'[^\w\s]', '', key)
+        canonical = self.VEHICLE_CANONICAL.get(cleaned)
+        if canonical:
+            return canonical
+        return candidate
 
     @staticmethod
     def _normalize_currency(value: str) -> str:
@@ -507,3 +888,15 @@ class MessageParser:
                 if origin and destination:
                     return origin, destination
         return None
+
+
+
+
+
+
+
+
+
+
+
+

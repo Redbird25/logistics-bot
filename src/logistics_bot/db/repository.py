@@ -47,12 +47,18 @@ class MessageRepository:
         *,
         origin: str | None = None,
         destination: str | None = None,
+        origin_city_id: str | None = None,
+        destination_city_id: str | None = None,
         vehicle_type: str | None = None,
         limit: int = 20,
     ) -> Sequence[models.Message]:
         stmt: Select[tuple[models.Message]] = select(models.Message).where(
             models.Message.duplicate_of_id.is_(None)
         )
+        if origin_city_id:
+            stmt = stmt.where(models.Message.route_from_city_id == origin_city_id)
+        if destination_city_id:
+            stmt = stmt.where(models.Message.route_to_city_id == destination_city_id)
         if origin:
             stmt = stmt.where(models.Message.route_from.ilike(f"%{origin}%"))
         if destination:

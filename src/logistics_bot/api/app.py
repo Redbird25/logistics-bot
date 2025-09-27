@@ -1,16 +1,58 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+import re
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from logistics_bot.api.schemas import ChatCreate, ChatOut, ChatStatus, MessageOut, RouteStat
 from logistics_bot.db.repository import ChatRepository, MessageRepository
 from logistics_bot.db.session import get_session, init_db
+from logistics_bot.parsing.cities import CityDirectory
+from logistics_bot.parsing.parser import MessageParser
 
 app = FastAPI(title="Logistics Aggregator API")
+
+WEB_DIR = Path(__file__).resolve().parents[3] / "web"
+if WEB_DIR.exists():
+    app.mount("/web", StaticFiles(directory=WEB_DIR, html=True), name="web")
+
+
+@app.get("/", include_in_schema=False, response_model=None)
+async def root():
+    if WEB_DIR.exists():
+        return RedirectResponse(url="/web/")
+    return {"status": "ok"}
+
+CITY_DIRECTORY = CityDirectory()
+VEHICLE_ALIASES = MessageParser.VEHICLE_CANONICAL
+
+
+def _normalize_vehicle_query(value: str | None) -> str | None:
+    if not value:
+        return None
+    candidate = value.strip()
+    if not candidate:
+        return None
+    key = candidate.lower()
+    canonical = VEHICLE_ALIASES.get(key)
+    if canonical:
+        return canonical
+    cleaned = re.sub(r'[^\w\s]', '', key)
+    canonical = VEHICLE_ALIASES.get(cleaned)
+    if canonical:
+        return canonical
+    return candidate
+
+
+    if WEB_DIR.exists():
+        return RedirectResponse(url="/web/")
+    return {"status": "ok"}
 
 
 async def db_session_dependency() -> AsyncGenerator[AsyncSession, None]:
@@ -32,15 +74,38 @@ async def healthcheck() -> dict[str, str]:
 async def search_messages(
     origin: str | None = Query(None, max_length=120),
     destination: str | None = Query(None, max_length=120),
+    origin_city_id: str | None = Query(None, max_length=64),
+    destination_city_id: str | None = Query(None, max_length=64),
     vehicle_type: str | None = Query(None, max_length=80),
     limit: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(db_session_dependency),
 ) -> list[MessageOut]:
     repo = MessageRepository(session)
+
+    resolved_origin = origin.strip() if origin else None
+    resolved_origin_city_id = origin_city_id
+    if origin:
+        origin_record = CITY_DIRECTORY.find(origin)
+        if origin_record:
+            resolved_origin = origin_record.name
+            resolved_origin_city_id = resolved_origin_city_id or origin_record.city_id
+
+    resolved_destination = destination.strip() if destination else None
+    resolved_destination_city_id = destination_city_id
+    if destination:
+        destination_record = CITY_DIRECTORY.find(destination)
+        if destination_record:
+            resolved_destination = destination_record.name
+            resolved_destination_city_id = resolved_destination_city_id or destination_record.city_id
+
+    resolved_vehicle = _normalize_vehicle_query(vehicle_type)
+
     results = await repo.search_messages(
-        origin=origin,
-        destination=destination,
-        vehicle_type=vehicle_type,
+        origin=resolved_origin,
+        destination=resolved_destination,
+        origin_city_id=resolved_origin_city_id,
+        destination_city_id=resolved_destination_city_id,
+        vehicle_type=resolved_vehicle,
         limit=limit,
     )
     return [
@@ -51,6 +116,14 @@ async def search_messages(
             posted_at=item.posted_at,
             route_from=item.route_from,
             route_to=item.route_to,
+            route_from_city_id=item.route_from_city_id,
+            route_from_city_name=item.route_from_city_name,
+            route_from_country=item.route_from_country,
+            route_from_region=item.route_from_region,
+            route_to_city_id=item.route_to_city_id,
+            route_to_city_name=item.route_to_city_name,
+            route_to_country=item.route_to_country,
+            route_to_region=item.route_to_region,
             vehicle_type=item.vehicle_type,
             tonnage_tons=item.tonnage_tons,
             price_amount=item.price_amount,

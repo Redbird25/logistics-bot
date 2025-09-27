@@ -18,6 +18,7 @@ class Message(Base):
     __table_args__ = (
         Index("ix_messages_chat_posted", "chat_id", "posted_at"),
         Index("ix_messages_hash_digest", "hash_digest", unique=True),
+        Index("ix_messages_route_city", "route_from_city_id", "route_to_city_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -27,6 +28,14 @@ class Message(Base):
     raw_text: Mapped[str] = mapped_column(Text)
     route_from: Mapped[str | None] = mapped_column(String(128))
     route_to: Mapped[str | None] = mapped_column(String(128))
+    route_from_city_id: Mapped[str | None] = mapped_column(String(64))
+    route_from_city_name: Mapped[str | None] = mapped_column(String(128))
+    route_from_country: Mapped[str | None] = mapped_column(String(4))
+    route_from_region: Mapped[str | None] = mapped_column(String(128))
+    route_to_city_id: Mapped[str | None] = mapped_column(String(64))
+    route_to_city_name: Mapped[str | None] = mapped_column(String(128))
+    route_to_country: Mapped[str | None] = mapped_column(String(4))
+    route_to_region: Mapped[str | None] = mapped_column(String(128))
     vehicle_type: Mapped[str | None] = mapped_column(String(64))
     tonnage_tons: Mapped[float | None] = mapped_column(Float)
     price_amount: Mapped[float | None] = mapped_column(Float)

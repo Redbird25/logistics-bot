@@ -13,6 +13,14 @@ class MessageOut(BaseModel):
     posted_at: dt.datetime
     route_from: str | None
     route_to: str | None
+    route_from_city_id: str | None
+    route_from_city_name: str | None
+    route_from_country: str | None
+    route_from_region: str | None
+    route_to_city_id: str | None
+    route_to_city_name: str | None
+    route_to_country: str | None
+    route_to_region: str | None
     vehicle_type: str | None
     tonnage_tons: float | None
     price_amount: float | None

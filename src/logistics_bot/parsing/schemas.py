@@ -18,8 +18,20 @@ class ParsedMessage:
     price_amount: float | None = None
     price_currency: str | None = None
     contact: str | None = None
+    cargo: str | None = None
+    urgency: str | None = None
+    valid_until: dt.datetime | None = None
     tags: list[str] = field(default_factory=list)
+    segments: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    route_from_city_id: str | None = None
+    route_from_city_name: str | None = None
+    route_from_country: str | None = None
+    route_from_region: str | None = None
+    route_to_city_id: str | None = None
+    route_to_city_name: str | None = None
+    route_to_country: str | None = None
+    route_to_region: str | None = None
 
     def to_record(self) -> dict[str, Any]:
         return {
@@ -36,4 +48,14 @@ class ParsedMessage:
             "contact": self.contact,
             "tags": self.tags,
             "metadata": self.metadata,
+            "route_from_city_id": self.route_from_city_id,
+            "route_from_city_name": self.route_from_city_name,
+            "route_from_country": self.route_from_country,
+            "route_from_region": self.route_from_region,
+            "route_to_city_id": self.route_to_city_id,
+            "route_to_city_name": self.route_to_city_name,
+            "route_to_country": self.route_to_country,
+            "route_to_region": self.route_to_region,
         }
+
+

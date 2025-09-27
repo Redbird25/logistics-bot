@@ -32,6 +32,14 @@ class CollectorAgent:
             self.settings.tg_api_hash,
         )
         self.allowed_chats: Set[int] = set()
+        self.self_user_id: int | None = None
+        self.bot_user_id: int | None = None
+        token = self.settings.tg_bot_token
+        if token:
+            try:
+                self.bot_user_id = int(token.split(':', 1)[0])
+            except (ValueError, AttributeError):
+                logger.warning('Unable to derive bot user id from token')
 
     @staticmethod
     def _normalize_chat_id(chat_id: int) -> int:
@@ -59,6 +67,13 @@ class CollectorAgent:
         if self.allowed_chats and normalized_chat_id not in self.allowed_chats:
             return
         message = event.message
+        sender_id = getattr(message, 'sender_id', None)
+        if getattr(message, 'out', False):
+            return
+        if self.self_user_id and sender_id == self.self_user_id:
+            return
+        if self.bot_user_id and sender_id == self.bot_user_id:
+            return
         posted_at = dt.datetime.fromtimestamp(message.date.timestamp(), dt.timezone.utc)
         await self.pipeline.handle_message(
             chat_id=normalized_chat_id,
@@ -73,6 +88,9 @@ class CollectorAgent:
         await self.client.connect()
         if not await self.client.is_user_authorized():
             raise RuntimeError("Telegram session is not authorized")
+        me = await self.client.get_me()
+        if me is not None:
+            self.self_user_id = getattr(me, 'id', None)
         logger.info("Collector agent started")
         task = asyncio.create_task(self._refresh_loop())
         try:
